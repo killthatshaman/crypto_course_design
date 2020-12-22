@@ -117,7 +117,7 @@ def ecc(request):
             d,Pa = sm2_moudle.generate_keys(64)
             response = {"type" : "sc","gongyao" : Pa , "siyao" : d}
         else:
-            response=｛"type" : "err" } 
+            response={"type" : "err" } 
         # response = {"miwen" : output}
         return HttpResponse(json.dumps(response),content_type = "application/json")
     else:
