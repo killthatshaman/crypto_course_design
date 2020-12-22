@@ -2,7 +2,7 @@
 <html>
 <head>
 
-  <title>SM2加密</title>
+  <title>SM2加密-效率比较</title>
      {% load static %}
   <meta charset="utf-8">
   <meta charset="utf-8">
@@ -51,6 +51,7 @@ width: 1000px;
 height:618px;
 }
 .lable1{
+  margin-top: 10;
     color:#CD00CD;
     font-size: 14pt;
 }
@@ -58,7 +59,7 @@ height:618px;
 </style>
 <body>
  <div class="conter" >
-        <h1>SM2加密
+        <h1>SM2加密效率对比
         </h1>
 
         <div class="input">
@@ -69,15 +70,23 @@ height:618px;
         <input id="siyao" type="text" name="points" style="width: 100%;"  max="25" min="0"/>
         <label class="lable1">公钥:</label>
         <input id="gongyao" type="text" name="points" style="width: 100%;" max="25" min="0"/>
+
         &emsp;
 
-     <div class="btn-group" style="margin: 10px;">
-            <button  type="button"  class="btn btn-success" onclick="myEncode('ve')">SM2加密</button>
-            <button  type="button"  class="btn btn-primary" onclick="myEncode('vd')">SM2解密</button>
+     <div class="btn-group" style="width: 40%;margin-left: 30%;margin-right: 30%; text-align: center;margin-bottom: 10px; ">
+            <button  type="button"  class="btn btn-success" onclick="myEncode('bef')">优化前-SM2加解密</button>
+            <button  type="button"  class="btn btn-primary" onclick="myEncode('aft')">优化后-SM2加解密</button>
             <button  type="button"  class="btn btn-success" onclick="myEncode('sc')">生成密钥对</button>
 
      </div>
-
+     <label class="lable1">优化前加密时间:</label>
+     <input id="time_en_bef" type="text" name="points" style="width: 28%;margin-right: 15px;" max="25" min="0"/>
+     <label class="lable1">优化前解密时间:</label>
+     <input id="time_de_bef" type="text" name="points" style="width: 28%;" max="25" min="0"/>
+     <label class="lable1">优化后加密时间:</label>
+     <input id="time_en_aft" type="text" name="points" style="width: 28%;margin-right: 15px;" max="25" min="0"/>
+     <label class="lable1">优化后解密时间:</label>
+     <input id="time_de_aft" type="text" name="points" style="width: 28%;" max="25" min="0"/>
         <div class="output">
           <textarea id="output" placeholder="这里是需要的输出">{{output}}</textarea>
         </div>
@@ -99,8 +108,8 @@ height:618px;
           Pa = 0
         var input = document.getElementById("inpsut").value;
         postData = {"input": input, "type": type1,"key":key,"Pa": Pa};
-        console.log(input+type1);
-         $.post("/crypto/ecc/",postData,function (output) {
+        // console.log(input+type1);
+         $.post("/crypto/sm2compare/",postData,function (output) {
            console.log(output)
         // document.getElementById("output").innerHTML=output.miwen;
         if(output.type == "sc")
@@ -111,15 +120,22 @@ height:618px;
           // TODO
           
         }
-        else if(output.type == "ve")
+        else if(output.type == "bef")
         {
-          document.getElementById("output").innerHTML=output.miwen;
+          document.getElementById("time_en_bef").value= output.entime;
+          document.getElementById("time_de_bef").value= output.detime;
+          document.getElementById("output").innerHTML= "-------------------------------------------加密-------------------------------------------\n" + output.miwen + "\n-------------------------------------------解密-------------------------------------------\n" + output.mingwen;
+          console.log("bef")
+
         }
-        else if(output.type == "vd")
+        else if(output.type == "aft")
         {
 
           console.log("asdasd")
-          document.getElementById("output").innerHTML=output.mingwen;
+          document.getElementById("time_en_aft").value= output.entime;
+          document.getElementById("time_de_aft").value= output.detime;
+          document.getElementById("output").innerHTML= "-------------------------------------------加密-------------------------------------------\n" + output.miwen + "\n-------------------------------------------解密-------------------------------------------\n" + output.mingwen;
+
         }
           // document.getElementById("output").innerHTML=output.miwen;
 

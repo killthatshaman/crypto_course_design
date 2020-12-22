@@ -19,7 +19,12 @@ urlpatterns = [
     path('commode/', views.commode, name='commode'),
     path('rsascript/', views.rsascript, name='rsascript'),
     path('vigenere/', views.vigenere, name='vigenere'),
+    path('sm2compare/', views.compare, name='sm2compare'),
+    path('sm2sign/', views.sign, name='sm2sign'),
+
     path('ecc/', views.ecc, name='ecc'),
+    
+
     
 
 ]

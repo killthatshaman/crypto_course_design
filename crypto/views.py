@@ -1,7 +1,7 @@
 import binascii
 from django.http import JsonResponse
 from django.http import HttpResponse
-from cryptoFunction import  commode_moudle,moder_moudle,bacon_moudle,b64_moudle,b58_moudle,b32_moudle,b16_moudle,caesar_moudle,Railfence,sm2_moudle
+from cryptoFunction import  commode_moudle,moder_moudle,bacon_moudle,b64_moudle,b58_moudle,b32_moudle,b16_moudle,caesar_moudle,Railfence,sm2_moudle,sm2_lowmod
 # Create your views here
 from cryptoFunction.morse_moudle import Morse
 import urllib.request
@@ -10,7 +10,18 @@ from cryptoFunction.jsfuck_moudle import JSFuck
 from pycipher import Autokey
 from pycipher import Vigenere
 import json
+import time
 #BASE家族
+sm2_p = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF
+sm2_a = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC
+sm2_b = 0x28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93
+sm2_n = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123
+sm2_Gx = 0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7
+sm2_Gy = 0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
+sm2_G = [sm2_Gx, sm2_Gy]
+sm2_r = 0
+sm2_s = 0
+sm2_Z_A = ''
 def base(request):
     if request.method=='POST':
         input = request.POST['input']
@@ -122,7 +133,83 @@ def ecc(request):
         return HttpResponse(json.dumps(response),content_type = "application/json")
     else:
         return render(request, 'ecc.html')
+#ecc
+def sign(request):
+    if request.method=='POST':
+        key=request.POST['key']
+        input = request.POST['input']
+        type1=request.POST['type']
+        Pa = request.POST['Pa']
+        signid = request.POST['signid']
+        sm2_Pa = []
 
+        if type1=="sign":
+            sm2_Pa.append(int(Pa[0:len(Pa)//2 ],16))
+            sm2_Pa.append(int(Pa[len(Pa)//2 : ],16))
+            sm2_key = int(key,16)
+            global sm2_r,sm2_s,sm2_Z_A
+            sm2_r, sm2_s, sm2_Z_A = sm2_lowmod.SM2_CA_Signature(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_key,sm2_Pa,signid,input)
+
+            response = {"type" : "sign" , "r" : hex(sm2_r).replace('0x','') ,"s" : hex(sm2_s).replace('0x','')}
+        elif type1=="check":
+            sm2_Pa.append(int(Pa[0:len(Pa)//2 ],16))
+            sm2_Pa.append(int(Pa[len(Pa)//2 : ],16))
+
+            ans = sm2_lowmod.SM2_CA_Check(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_Z_A,sm2_Pa,input,sm2_r,sm2_s)
+            response = {"type" : "check" , "result" : ans}
+        elif type1 == "sc":
+            d,Pa = sm2_moudle.generate_keys(64)
+            response = {"type" : "sc","gongyao" : Pa , "siyao" : d}
+        else:
+            response={"type" : "err" } 
+        # response = {"miwen" : output}
+        return HttpResponse(json.dumps(response),content_type = "application/json")
+    else:
+        return render(request, 'sm2sign.html')
+
+def compare(request):
+    if request.method=='POST':
+        key=request.POST['key']
+        input = request.POST['input']
+        type1=request.POST['type']
+        Pa = request.POST['Pa']
+        if type1=="bef":
+            # print("Pa = " + Pa)
+            sm2_Pa = []
+            sm2_Pa.append(int(Pa[0:len(Pa)//2 ],16))
+            sm2_Pa.append(int(Pa[len(Pa)//2 : ],16))
+            sm2_key = int(key,16)
+            # print(sm2_Pa)
+            c1 = time.time()
+            C = sm2_lowmod.SM2_Encrypt(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_Pa,input)
+            CM = sm2_lowmod.SM3_Decode(C)
+            c2 = time.time()
+            en_time = c2 - c1
+            m1 = time.time()
+            M = sm2_lowmod.SM2_Decrypt(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_key,C)
+            m2 = time.time()
+            de_time = m2-m1
+            response = {"type" : "bef" , "miwen" : CM , "mingwen" : M , "entime" : str(en_time) , "detime" : str(de_time)}
+        elif type1=="aft":
+            c1 = time.time()
+            C = sm2_moudle.Encrypt(input,Pa,64,0)
+            c2 = time.time()
+            en_time = c2 - c1
+            m1 = time.time()
+            m = sm2_moudle.Decrypt(C,key,64)
+            M = bytes.fromhex(m)
+            m2 = time.time()
+            de_time = m2-m1
+            response = {"type" : "aft" , "mingwen" : M.decode() ,"miwen" : C , "entime" : str(en_time) , "detime" : str(de_time)}
+        elif type1 == "sc":
+            d,Pa = sm2_moudle.generate_keys(64)
+            response = {"type" : "sc","gongyao" : Pa , "siyao" : d}
+        else:
+            response={"type" : "err" } 
+        # response = {"miwen" : output}
+        return HttpResponse(json.dumps(response),content_type = "application/json")
+    else:
+        return render(request, 'sm2compare.html')
 #进制转化
 def converter(request):
     if request.method=='POST':

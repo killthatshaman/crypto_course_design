@@ -2,7 +2,7 @@
 <html>
 <head>
 
-  <title>SM2加密</title>
+  <title>SM2数字签名</title>
      {% load static %}
   <meta charset="utf-8">
   <meta charset="utf-8">
@@ -58,7 +58,7 @@ height:618px;
 </style>
 <body>
  <div class="conter" >
-        <h1>SM2加密
+        <h1>SM2数字签名
         </h1>
 
         <div class="input">
@@ -69,11 +69,13 @@ height:618px;
         <input id="siyao" type="text" name="points" style="width: 100%;"  max="25" min="0"/>
         <label class="lable1">公钥:</label>
         <input id="gongyao" type="text" name="points" style="width: 100%;" max="25" min="0"/>
+        <label class="lable1">ID:</label>
+        <input id="signid" type="text" name="points" style="width: 100%;" max="25" min="0"/>
         &emsp;
 
      <div class="btn-group" style="margin: 10px;">
-            <button  type="button"  class="btn btn-success" onclick="myEncode('ve')">SM2加密</button>
-            <button  type="button"  class="btn btn-primary" onclick="myEncode('vd')">SM2解密</button>
+            <button  type="button"  class="btn btn-success" onclick="myEncode('sign')">SM2签名</button>
+            <button  type="button"  class="btn btn-primary" onclick="myEncode('check')">SM2验签</button>
             <button  type="button"  class="btn btn-success" onclick="myEncode('sc')">生成密钥对</button>
 
      </div>
@@ -98,9 +100,10 @@ height:618px;
         if(Pa == "")
           Pa = 0
         var input = document.getElementById("inpsut").value;
-        postData = {"input": input, "type": type1,"key":key,"Pa": Pa};
+        var signid = document.getElementById("signid").value;
+        postData = {"input": input, "type": type1,"key":key,"Pa": Pa,"signid":signid};
         console.log(input+type1);
-         $.post("/crypto/ecc/",postData,function (output) {
+         $.post("/crypto/sm2sign/",postData,function (output) {
            console.log(output)
         // document.getElementById("output").innerHTML=output.miwen;
         if(output.type == "sc")
@@ -111,15 +114,16 @@ height:618px;
           // TODO
           
         }
-        else if(output.type == "ve")
+        else if(output.type == "sign")
         {
-          document.getElementById("output").innerHTML=output.miwen;
+          console.log('sign')
+          document.getElementById("output").innerHTML="(r,s) = (" + output.r + ' , ' + output.s + ')';
         }
-        else if(output.type == "vd")
+        else if(output.type == "check")
         {
 
-          console.log("asdasd")
-          document.getElementById("output").innerHTML=output.mingwen;
+          console.log("check")
+          document.getElementById("output").innerHTML=output.result;
         }
           // document.getElementById("output").innerHTML=output.miwen;
 

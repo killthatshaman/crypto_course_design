@@ -4,7 +4,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>ECC解密</title>
+  <title>SM2解密</title>
   {% load static %}
   <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -16,7 +16,7 @@
 </div>
   <div class="wrapper">
   <div class="header-wrap">
-    <h1>ECC在线加解密</h1>
+    <h1>SM2在线加解密</h1>
   </div>
 </div>
 
@@ -28,7 +28,7 @@
       <span class='btn-inner'>
         <span class='content-wrapper'>
           <span class='btn-content'>
-            <span class='btn-content-inner' label='ECC加密'>
+            <span class='btn-content-inner' label='SM2加解密'>
             </span>
           </span>
         </span>
@@ -40,12 +40,28 @@
 <div style="display: inline-block; width: 30px"></div>
 
 <div class='wrapper'>
-  <div role='button' class='retro-btn lg'>
-    <a href="/crypto/eccdecrypt/" class='btn'>
+  <div role='button' class='retro-btn lg primary'>
+    <a href="/crypto/sm2compare/" class='btn'>
       <span class='btn-inner'>
         <span class='content-wrapper'>
           <span class='btn-content'>
-            <span class='btn-content-inner' label='ECC解密'>
+            <span class='btn-content-inner' label='SM2加密效率比较'>
+            </span>
+          </span>
+        </span>
+      </span>
+    </a>
+  </div>
+</div>
+
+
+<div class='wrapper'>
+  <div role='button' class='retro-btn lg success'>
+    <a href="/crypto/sm2sign/" class='btn'>
+      <span class='btn-inner'>
+        <span class='content-wrapper'>
+          <span class='btn-content'>
+            <span class='btn-content-inner' label='SM2数字签名'>
             </span>
           </span>
         </span>
