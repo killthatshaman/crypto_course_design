@@ -118,12 +118,14 @@ def ecc(request):
         type1=request.POST['type']
         Pa = request.POST['Pa']
         if type1=="ve":
-            C = sm2_moudle.Encrypt(input,Pa,64,0)
-            response = {"type" : "ve" , "miwen" : C}
+            C,k,C1,x2,y2,ml,t,C2,C3 = sm2_moudle.Encrypt(input,Pa,64,0)
+            # print(type(k),type(C1),type(x2),type(y2),type(ml),type(t),type(C2),type(C3),sep = "\n")
+            response = {"type" : "ve" , "miwen" : C , "k" : k,"C1" : C1 ,"C2" : C2,"C3" : C3 ,"x2" : x2,"y2" : y2 ,"ml" : hex(ml),"t" : t}
         elif type1=="vd":
-            m = sm2_moudle.Decrypt(input,key,64)
+            m,x2,y2,t,M_M,u = sm2_moudle.Decrypt(input,key,64)
+            # print(type(x2),type(y2),type(t),type(M_M),type(u),sep = "\n")
             M = bytes.fromhex(m)
-            response = {"type" : "vd" , "mingwen" : M.decode()}
+            response = {"type" : "vd" , "mingwen" : M.decode() , "x2" : x2,"y2" : y2 , "t" : t , "M_M": M_M, "u" : u}
         elif type1 == "sc":
             d,Pa = sm2_moudle.generate_keys(64)
             response = {"type" : "sc","gongyao" : Pa , "siyao" : d}
@@ -148,15 +150,20 @@ def sign(request):
             sm2_Pa.append(int(Pa[len(Pa)//2 : ],16))
             sm2_key = int(key,16)
             global sm2_r,sm2_s,sm2_Z_A
-            sm2_r, sm2_s, sm2_Z_A = sm2_lowmod.SM2_CA_Signature(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_key,sm2_Pa,signid,input)
-
-            response = {"type" : "sign" , "r" : hex(sm2_r).replace('0x','') ,"s" : hex(sm2_s).replace('0x','')}
+            sm2_r, sm2_s, sm2_Z_A,M_M,e,k,x_1,y_1 = sm2_lowmod.SM2_CA_Signature(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_key,sm2_Pa,signid,input)
+            # print(type(M_M),type(e),type(k),type(x_1),type(y_1),sep = '\n')
+            response = {"type" : "sign" , "r" : hex(sm2_r).replace('0x','') ,"s" : hex(sm2_s).replace('0x','') ,"M_M" : hex(int(M_M,2)) ,"e" : hex(int(e,2)) , "k" : hex(k) ,"x_1" : hex(x_1) , "y_1" : hex(y_1) }
         elif type1=="check":
             sm2_Pa.append(int(Pa[0:len(Pa)//2 ],16))
             sm2_Pa.append(int(Pa[len(Pa)//2 : ],16))
 
-            ans = sm2_lowmod.SM2_CA_Check(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_Z_A,sm2_Pa,input,sm2_r,sm2_s)
-            response = {"type" : "check" , "result" : ans}
+            ans,M_M,e,t,x_1,y_1,R = sm2_lowmod.SM2_CA_Check(sm2_a,sm2_b,sm2_p,sm2_n,sm2_G,sm2_Z_A,sm2_Pa,input,sm2_r,sm2_s)
+            # print(type(M_M),type(e),type(t),type(x_1),type(y_1),type(R),sep = "\n")
+            if(ans == True):
+                result = "CHECK SUCCESS."
+            else:
+                result = "CHECK FAILED."
+            response = {"type" : "check" , "result" : result , "M_M" : hex(int(M_M,2)) , "e" : hex(int(e,2)), "t" : hex(t), "x_1" : hex(x_1) , "y_1" : hex(y_1) , "R" : hex(R)}
         elif type1 == "sc":
             d,Pa = sm2_moudle.generate_keys(64)
             response = {"type" : "sc","gongyao" : Pa , "siyao" : d}

@@ -1,10 +1,22 @@
+"""
+国家密码管理局推荐的曲线参数
+椭圆曲线方程:y^2 = x^3+a*x+b
+曲线参数:
+p=FFFFFFFE FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 00000000 FFFFFFFF FFFFFFFF
+a=FFFFFFFE FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 00000000 FFFFFFFF FFFFFFFC
+b=28E9FA9E 9D9F5E34 4D5A9E4B CF6509A7 F39789F5 15AB8F92 DDBCBD41 4D940E93
+n=FFFFFFFE FFFFFFFF FFFFFFFF FFFFFFFF 7203DF6B 21C6052B 53BBF409 39D54123
+Gx=32C4AE2C 1F198119 5F990446 6A39C994 8FE30BBF F2660BE1 715A4589 334C74C7
+Gy=BC3736A2 F4F6779C 59BDCEE3 6B692153 D0A9877C C62A4740 02DF32E5 2139F0A0
+"""
 import random
 import math
 
 def SM2_Create(a, p, n, G):#SM2密钥对的生成
-	d_B = random.randint(1, n-2)   
+	d_B = random.randint(1, n-2)
 	P_B = SM2_Mulyipoint(d_B, G, a, p)
 	return [d_B, P_B]
+
 def SM2_CA_Signature(a, b, p, n, G, d_A, P_A, ID_A, M):#数字签名生成
 	entlen_A = len(ID_A)*8
 	ENTL_A = bin(entlen_A).replace('0b', '').rjust(16, '0')
@@ -17,42 +29,42 @@ def SM2_CA_Signature(a, b, p, n, G, d_A, P_A, ID_A, M):#数字签名生成
 	x_A_b = bin(P_A[0]).replace('0b', '').rjust(256, '0')
 	y_A_b = bin(P_A[1]).replace('0b', '').rjust(256, '0')
 	Z_A = SM3(ENTL_A+ID_A_b+a_b+b_b+Gx_b+Gy_b+x_A_b+y_A_b)
-	M_M = Z_A+M_b
-	e = SM3(M_M)
+	M_M = Z_A+M_b   #M_ = Za || M
+	e = SM3(M_M)    #密码杂凑函数值e=H256(M)：
 	while True:
-		k = random.randint(1, n-1)
-		[x_1, y_1] = SM2_Mulyipoint(k, G, a, p)
-		r = SM2_Mod(int(e, 2)+x_1, n)
+		k = random.randint(1, n-1) #产生随机数k：
+		[x_1, y_1] = SM2_Mulyipoint(k, G, a, p) #计算椭圆曲线点(x1,y1)=[k]G：
+		r = SM2_Mod(int(e, 2)+x_1, n)  #计算r=(e+x1) modn：
 		if r == 0 or r+k == n:
 			continue
 		else:
-			s = SM2__Mod_Decimal(k-r*d_A, 1+d_A, n)
+			s = SM2__Mod_Decimal(k-r*d_A, 1+d_A, n) #(1 + dA)^-1,计算s = ((1 + dA) ^ −1· (k − r · dA)) modn：
 			if s == 0:
 				continue
 			else:
 				break
-	return [r, s, Z_A ,M_M,e,k,x_1,y_1]
+	return [r, s, Z_A]
 
 def SM2_CA_Check(a, b, p, n, G, Z_A, P_A, M, r, s):#数字签名认证
 	M_b = "".join([bin(ord(i)).replace('0b', '').rjust(8, '0') for i in M])
 	if 1 <= r <= n-1:
 		if 1 <=s <= n-1:
 			M_M = Z_A+M_b
-			e = SM3(M_M)
-			t = SM2_Mod(r+s, n)
+			e = SM3(M_M)  #密码杂凑函数值e′ = H256(M′)：
+			t = SM2_Mod(r+s, n)  #计算t=(r′+s′) modn：
 			if t != 0:
-				[x_1, y_1] = SM2_Pluspoint(SM2_Mulyipoint(s, G, a, p), SM2_Mulyipoint(t, P_A, a, p), a, p)
-				R = SM2_Mod(int(e, 2)+x_1, n)
+				[x_1, y_1] = SM2_Pluspoint(SM2_Mulyipoint(s, G, a, p), SM2_Mulyipoint(t, P_A, a, p), a, p) #计算椭圆曲线点
+				R = SM2_Mod(int(e, 2)+x_1, n)  #计算R = (e′ + x′1) modn：
 				if R == r:
-					return True,M_M,e,t,x_1,y_1,R
+					print("CHECKING SUCCEED")
 				else:
-					return False,M_M,e,t,x_1,y_1,R
+					print("CHECKING FAILED")
 			else:
-				return False,M_M,e,t,x_1,y_1,R
+				print("CHECKING FAILED")
 		else:
-			return False,M_M,e,t,x_1,y_1,R
+			print("CHECKING FAILED")
 	else:
-		return False,M_M,e,t,x_1,y_1,R
+		print("CHECKING FAILED")
 
 def SM2_Encrypt(a, b, p, n, G, P_B, M):#加密
 	h = int((p**0.5+1)**2/n)
@@ -161,7 +173,7 @@ def SM2_Pluspoint(P, Q, a, p):#双倍点运算
 		R = [x, y]
 	return R
 
-def SM2_Mod(a, b):#摸运算
+def SM2_Mod(a, b):#模运算
 	if math.isinf(a):
 		return float('inf')
 	else:
@@ -303,19 +315,31 @@ def SM3_Decode(Y):#01串转换为16进制串
 	return "".join(hex(i).replace('0x', '') for i in [int(Y[j:j+4], 2) for j in range(0, len(Y), 4)])
 
 
-# p = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF
-# a = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC
-# b = 0x28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93
-# n = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123
-# Gx = 0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7
-# Gy = 0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
-# G = [Gx, Gy]
-# [d_B, P_B] = SM2_Create(a, p, n, G)
-# print("\nd_B:[%X]"%d_B)
-# print("P_B:[%X, \n     %X]\n"%(P_B[0], P_B[1]))
-# M = "we are student"
-# print("M:%s\n"%M)
-# C = SM2_Encrypt(a, b, p, n, G, P_B, M)
-# print("C:%s\n"%SM3_Decode(C))
-# M = SM2_Decrypt(a, b, p, n, G, d_B, C)
-# print("M:%s"%M)
+p = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF
+a = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC
+b = 0x28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93
+n = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123
+Gx = 0x32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7
+Gy = 0xBC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0
+G = [Gx, Gy]
+[d_A, P_A] = SM2_Create(a, p, n, G)
+print("sign and vertify")
+print("\nd_A:[%X]"%d_A)
+print("P_A:[%X, \n     %X]\n"%(P_A[0], P_A[1]))
+ID_A = "xchen@alittlecat.cn"
+M = "we are student"
+print("ID_A:%s\n"%ID_A)
+print("M:%s\n"%M)
+[r, s, Z_A] = SM2_CA_Signature(a, b, p, n, G, d_A, P_A, ID_A, M)
+print("(r, s):(%s, \n\t%s)\n"%(hex(r).replace('0x', '').rjust(64, '0'), hex(s).replace('0x', '').rjust(64, '0')))
+SM2_CA_Check(a, b, p, n, G, Z_A, P_A, M, r, s)
+
+
+print("\nd_A:[%X]"%d_A)
+print("P_A:[%X, \n     %X]\n"%(P_A[0], P_A[1]))
+print("M:%s\n"%M)
+C = SM2_Encrypt(a, b, p, n, G, P_A, M)
+print("C:%s\n"%SM3_Decode(C))
+M = SM2_Decrypt(a, b, p, n, G, d_A, C)
+print("M:%s"%M)
+

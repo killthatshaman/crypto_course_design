@@ -83,6 +83,11 @@ height:618px;
         <div class="output">
           <textarea id="output" placeholder="这里是需要的输出">{{output}}</textarea>
         </div>
+        <label class="lable1">中间过程:</label>
+        <div class="output">
+            
+          <textarea id="midway" placeholder="">{{midway}}</textarea>
+        </div>
         <a class="btn btn-danger " href="/">返回主页</a>
 
       </div>
@@ -117,13 +122,28 @@ height:618px;
         else if(output.type == "sign")
         {
           console.log('sign')
+          ans = "M=ZA ∥ M : \n" + output.M_M + '\n\n';
+          ans += "计算e = Hv(M) : \n" + output.e + '\n\n';
+          ans += "产生随机数k ∈[1,n-1] : \n" + output.k + '\n\n';
+          ans += "计算椭圆曲线点(x1,y1)=[k]G : \n" + "(" + output.x_1 + " , " + output.y_1 + ")\n\n";
+
           document.getElementById("output").innerHTML="(r,s) = (" + output.r + ' , ' + output.s + ')';
+          document.getElementById("midway").innerHTML=ans;
+
         }
         else if(output.type == "check")
         {
 
           console.log("check")
           document.getElementById("output").innerHTML=output.result;
+          ans = "M′ : \n" + output.M_M + '\n\n';
+          ans += "密码杂凑函数值e′ : \n" + output.e + '\n\n';
+          ans += "计算t=(r′+s′) mod n : \n" + output.t + '\n\n';
+          ans += "计算椭圆曲线点(x1,y1) : \n"+ "(" + output.x_1  + ' , ' + output.y_1 + ')\n\n';
+          ans += "计算R = (e′ + x′1) mod n : \n" + output.R + '\n';
+          document.getElementById("midway").innerHTML=ans;
+
+          
         }
           // document.getElementById("output").innerHTML=output.miwen;
 

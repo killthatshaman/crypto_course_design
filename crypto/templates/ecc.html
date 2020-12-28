@@ -81,6 +81,11 @@ height:618px;
         <div class="output">
           <textarea id="output" placeholder="这里是需要的输出">{{output}}</textarea>
         </div>
+        <label class="lable1">中间过程:</label>
+        <div class="output">
+            
+          <textarea id="midway" placeholder="">{{midway}}</textarea>
+        </div>
         <a class="btn btn-danger " href="/">返回主页</a>
 
       </div>
@@ -113,13 +118,27 @@ height:618px;
         }
         else if(output.type == "ve")
         {
+          ans = "产生随机数k : \n" + output.k + '\n\n' ;
+          ans += "计算椭圆曲线点C1=[k]G=(x1,y1) : \n" + output.C1 + '\n\n';
+          ans += "计算椭圆曲线点[k]PB=(x2,y2) : \n" + "(" + output.x2 + ' , ' + output.y2 + ') \n\n' ;
+          ans += "消息M的比特长度klen : \n" + output.ml + '\n\n';
+          ans += "计算t=KDF(x2∥y2, klen) : \n" + output.t + '\n\n';
+          ans += "计算C2=M⊕t :\n" + output.C2 + '\n\n';
+          ans += "计算C3=Hash(x2 ∥ M ∥ y2) : \n" + output.C3 + '\n\n';
+
           document.getElementById("output").innerHTML=output.miwen;
+          document.getElementById("midway").innerHTML=ans;
         }
         else if(output.type == "vd")
         {
-
-          console.log("asdasd")
+          ans = "计算椭圆曲线点[dB]C1=(x2, y2) : \n" + '(' +output.x2 + ' , ' + output.y2  + ')\n\n';
+          ans += "计算t = KDF(x2∥y2,klen) : \n" + output.t + '\n\n' ;
+          ans += "计算M′ = C2 ⊕ t : \n" + output.M_M + '\n\n' ;
+          ans += "计算u =Hash(x2∥M′∥y2) : \n" + output.u + '\n\n';
+          // console.log("asdasd")
           document.getElementById("output").innerHTML=output.mingwen;
+          document.getElementById("midway").innerHTML=ans;
+
         }
           // document.getElementById("output").innerHTML=output.miwen;
 

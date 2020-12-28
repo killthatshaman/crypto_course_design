@@ -220,29 +220,29 @@ def Encrypt(M,PA,len_para,Hexstr = 0):# 加密函数，M消息，PA公钥
     else:
         msg = M.encode('utf-8')
         msg = msg.hex() # 消息转化为16进制字符串
-    k = get_random_str(len_para)
+    k = get_random_str(len_para)#产生随机数k
     # k = '59276E27D506861A16680F3AD9C02DCCEF3CC1FA3CDBE4CE6D54B80DEAC1BC21'
     # k = '384F30353073AEECE7A1654330A96204D37982A3E15B2CB5'
-    C1 = kG(int(k,16),sm2_G,len_para)
+    C1 = kG(int(k,16),sm2_G,len_para)#计算椭圆曲线点C1=[k]G=(x1,y1)
     # print('C1 = %s'%C1)
     xy = kG(int(k,16),PA,len_para)
     # print('xy = %s' % xy)
-    x2 = xy[0:len_para]
+    x2 = xy[0:len_para]#计算椭圆曲线点[k]PB=(x2,y2)：
     y2 = xy[len_para:2*len_para]
-    ml = len(msg)
+    ml = len(msg) #消息M的比特长度klen
     # print('ml = %d'% ml)
-    t = SM3.KDF(xy,ml/2)
+    t = SM3.KDF(xy,ml/2)#计算t=KDF(x2∥y2, klen)
     # print(t)
     if int(t,16)==0:
         return None
     else:
         form = '%%0%dx' % ml
-        C2 = form % (int(msg,16) ^ int(t,16))
+        C2 = form % (int(msg,16) ^ int(t,16))#计算C2=M⊕t
         # print('C2 = %s'% C2)
         # print('%s%s%s'% (x2,msg,y2))
-        C3 = SM3.Hash_sm3('%s%s%s'% (x2,msg,y2),1)
+        C3 = SM3.Hash_sm3('%s%s%s'% (x2,msg,y2),1)#计算C3=Hash(x2 ∥ M ∥ y2)：
         # print('C3 = %s' % C3)
-        return '%s%s%s' % (C1,C3,C2)
+        return '%s%s%s' % (C1,C3,C2) , k,C1,x2,y2,ml,t,C2,C3 #输出密文C = C1∥C2∥C3：
 
 def Decrypt(C,DA,len_para):# 解密函数，C密文（16进制字符串），DA私钥
     len_2 = 2 * len_para
@@ -252,50 +252,21 @@ def Decrypt(C,DA,len_para):# 解密函数，C密文（16进制字符串），DA�
     C2 = C[len_3:]
     xy = kG(int(DA,16),C1,len_para)
     # print('xy = %s' % xy)
-    x2 = xy[0:len_para]
+    x2 = xy[0:len_para]#计算椭圆曲线点[dB]C1=(x2, y2)：
     y2 = xy[len_para:len_2]
     cl = len(C2)
     # print(cl)
-    t = SM3.KDF(xy, cl/2)
+    t = SM3.KDF(xy, cl/2)#计算t = KDF(x2∥y2,klen)
     # print('t = %s'%t)
     if int(t,16) == 0:
         return None
     else:
         form = '%%0%dx' % cl
-        M = form % (int(C2,16) ^ int(t,16))
+        M = form % (int(C2,16) ^ int(t,16))#计算M′ = C2 ⊕ t：
         # print('M = %s' % M)
-        u = SM3.Hash_sm3('%s%s%s'% (x2,M,y2),1)
+        u = SM3.Hash_sm3('%s%s%s'% (x2,M,y2),1)#计算u =Hash(x2∥M′∥y2)：
         if  (u == C3):
-            return M
+            return M ,x2,y2,t,M,u #明文M′
         else:
             return None
 
-
-# if __name__ == '__main__':
-#     len_para = int(Fp / 4)
-#     print(len_para)
-#     e = get_random_str(len_para)
-#     d = get_random_str(len_para)
-#     k = get_random_str(len_para)
-#     # e = '656E6372797074696F6E207374616E64617264'
-#     d = '3945208F7B2144B13F36E38AC6D39F95889393692860B51A42FB81EF4DF7C5B8'
-#     # d = '58892B807074F53FBF67288A1DFAA1AC313455FE60355AFD'
-#     Pa = kG(int(d, 16), sm2_G,len_para)
-#     Sig = Sign(e,d,k,len_para,1)
-#     print(Verify(Sig,e,Pa,len_para))
-#     print(Pa)
-#     e = "你好"
-#     print('M = %s' % e)
-#     C = Encrypt(e,Pa,len_para,0)
-#     print('C = %s' % C)
-#     print('Decrypt')
-#     m = Decrypt(C,d,len_para)
-#     M = bytes.fromhex(m)
-#     print(M.decode())
-
-#     # e  = '00ce5d9489d867867096326f3842323ab0a2f7f893181bae4dc9d4cd7ed50f31'
-#     # D  = '1d06dc143f1725f7eeae8a0ae94ebc62fbe4407c99a90950e46d29e7645000cb'
-#     # K  = '8e00000000000000000000000000000000000000000000000000000000000000'
-#     # Px = '000000000000000000000000000000000000000000000000f100000000000000'
-#     # Py = '0000000000000000000000000000000000000000000000000000000000000000'
-#     # print(Verify(D+K, e, Px+Py, len_para))
