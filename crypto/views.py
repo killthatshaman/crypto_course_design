@@ -1,7 +1,7 @@
 import binascii
 from django.http import JsonResponse
 from django.http import HttpResponse
-from cryptoFunction import  commode_moudle,moder_moudle,bacon_moudle,b64_moudle,b58_moudle,b32_moudle,b16_moudle,caesar_moudle,Railfence,sm2_moudle,sm2_lowmod
+from cryptoFunction import  commode_moudle,moder_moudle,bacon_moudle,b64_moudle,b58_moudle,b32_moudle,b16_moudle,caesar_moudle,Railfence,sm2_moudle,sm2_lowmod,SM2_keyExchange
 # Create your views here
 from cryptoFunction.morse_moudle import Morse
 import urllib.request
@@ -22,6 +22,12 @@ sm2_G = [sm2_Gx, sm2_Gy]
 sm2_r = 0
 sm2_s = 0
 sm2_Z_A = ''
+ex_key1 = []
+ex_key2 = []
+len_PAx = 0
+len_PAy = 0
+len_PBx = 0
+len_PBy = 0
 def base(request):
     if request.method=='POST':
         input = request.POST['input']
@@ -136,6 +142,89 @@ def ecc(request):
     else:
         return render(request, 'ecc.html')
 #ecc
+def exchange(request):
+    if request.method=='POST':
+        global ex_key1,ex_key2,len_PAx,len_PAy,len_PBx,len_PBy
+        dA_=request.POST['key']
+        dA = int(dA_,16)
+        dB_=request.POST['key2']
+        dB = int(dB_,16)
+        # input = request.POST['input']
+        ida = request.POST['ida']
+        idb = request.POST['idb']
+        type1=request.POST['type']
+        PA_ = request.POST['Pa']
+        PB_ = request.POST['Pa2']
+        if type1=="exchange":
+            # global ex_key1,ex_key2
+            dA = ex_key1[0]
+            PA = ex_key1[1]
+
+            ex_key1[1].x = int(PA_[0:len_PAx ],16)
+            ex_key1[1].y = int(PA_[len_PAx : ],16)
+
+            dB = ex_key2[0]
+            PB = ex_key2[1]
+
+            ex_key2[1].x = int(PB_[0:len_PBx ],16)
+            ex_key2[1].y = int(PB_[len_PBx : ],16)
+            SM2_keyExchange.config.default_config()
+            RA, rA = SM2_keyExchange.key_generation_1()
+
+            RB, rB = SM2_keyExchange.key_generation_1()
+            ZA, ZB = SM2_keyExchange.get_ZA_ZB(ida, idb, PA, PB)
+            # for i in SM2_keyExchange.key_generation_2(ZA, ZB, rB, RB, RA, dB, PB, PA, 128, 0):
+            #     print(type(i))
+            kB, SB, S2,x_self_1 ,t_self1 ,x_opposite_1,U_self1 = SM2_keyExchange.key_generation_2(ZA, ZB, rB, RB, RA, dB, PB, PA, 128, 0)
+            kA, SA, S1,x_self_2 ,t_self2 ,x_opposite_2,U_self2 = SM2_keyExchange.key_generation_2(ZA, ZB, rA, RA, RB, dA, PA, PB, 128, 1)
+            b2a = SM2_keyExchange.key_generation_3(SB, S1)
+            if(b2a):
+                b2a_ = 'A协商成功'
+            else:
+                b2a_ = 'A协商失败'
+            
+            a2b = SM2_keyExchange.key_generation_3(SA, S2)
+            if(a2b):
+                a2b_ = 'B协商成功'
+            else:
+                a2b_ = "B协商失败"
+            response = {"type" : "exchange" , "b2a" : b2a_ , "a2b" : a2b_, "RA" : hex(RA.x).replace('0x','') + hex(RA.y).replace('0x','') , \
+                "rA" : hex(rA).replace('0x','') , "RB" : hex(RB.x).replace('0x','') + hex(RB.y).replace('0x','') , "rB" : hex(rB).replace('0x','') , "kB" : hex(int(kB,2)).replace('0x',''), "SB":hex(int(SB,2)).replace('0x','') \
+                    ,"S2" :hex(int(S2,2)).replace('0x',''),"x_self_1" :hex(x_self_1).replace('0x','') , "t_self1" : hex(t_self1).replace('0x','') ,"x_opposite_1":hex(x_opposite_1).replace('0x','') , \
+                        "U_self1" :hex(U_self1.x).replace('0x','') + hex(U_self1.y).replace('0x','') , "kA" : hex(int(kA,2)).replace('0x','') , "SA" : hex(int(SA,2)).replace('0x','') ,"S1" : hex(int(S1,2)).replace('0x','') ,\
+                         "x_self_2" : hex(x_self_2).replace('0x','') ,"t_self2" :hex(t_self2).replace('0x',''),"x_opposite_2" : hex(x_opposite_2).replace('0x',''),"U_self2" :hex(U_self2.x).replace('0x','') + hex(U_self2.y).replace('0x','') } 
+        elif type1=="vd":
+            m,x2,y2,t,M_M,u = sm2_moudle.Decrypt(input,key,64)
+            # print(type(x2),type(y2),type(t),type(M_M),type(u),sep = "\n")
+            M = bytes.fromhex(m)
+            response = {"type" : "vd" , "mingwen" : M.decode() , "x2" : x2,"y2" : y2 , "t" : t , "M_M": M_M, "u" : u}
+        elif type1 == "sc":
+            
+            SM2_keyExchange.config.default_config()
+            parameters = SM2_keyExchange.config.get_parameters()
+            ex_key1 = SM2_keyExchange.key_pair_generation(parameters)
+            dA = ex_key1[0]
+            PA = ex_key1[1]
+
+            len_PAx = len(hex(PA.x).replace('0x',''))
+            len_PAy = len(hex(PA.y).replace('0x',''))
+
+
+            Pa = hex(PA.x).replace('0x','') + hex(PA.y).replace('0x','')
+            ex_key2 = SM2_keyExchange.key_pair_generation(parameters)
+            dB = ex_key2[0]
+            PB = ex_key2[1]
+            len_PBx = len(hex(PB.x).replace('0x',''))
+            len_PBy = len(hex(PB.y).replace('0x',''))
+            Pa2 = hex(PB.x).replace('0x','') + hex(PB.y).replace('0x','')
+            response = {"type" : "sc","gongyao" : Pa , "siyao" : hex(dA).replace('0x','') , "gongyao2" : Pa2 ,"siyao2" : hex(dB).replace('0x','')}
+        else:
+            response={"type" : "err" } 
+        # response = {"miwen" : output}
+        return HttpResponse(json.dumps(response),content_type = "application/json")
+    else:
+        return render(request, 'sm2exchange.html')
+
 def sign(request):
     if request.method=='POST':
         key=request.POST['key']
@@ -199,11 +288,14 @@ def compare(request):
             response = {"type" : "bef" , "miwen" : CM , "mingwen" : M , "entime" : str(en_time) , "detime" : str(de_time)}
         elif type1=="aft":
             c1 = time.time()
-            C = sm2_moudle.Encrypt(input,Pa,64,0)
+            C,k,C1,x2,y2,ml,t,C2,C3 = sm2_moudle.Encrypt(input,Pa,64,0)
             c2 = time.time()
             en_time = c2 - c1
             m1 = time.time()
-            m = sm2_moudle.Decrypt(C,key,64)
+            # print(C)
+            # print(key)
+            # print(Pa)
+            m,x2,y2,t,M_M,u  = sm2_moudle.Decrypt(C,key,64)
             M = bytes.fromhex(m)
             m2 = time.time()
             de_time = m2-m1

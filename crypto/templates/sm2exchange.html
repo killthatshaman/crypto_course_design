@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <title>SM2密钥交换</title>
+     {% load static %}
+  <meta charset="utf-8">
+  <meta charset="utf-8">
+
+ <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+   <script  src="/static/js/jquery.min.js"></script>
+</head>
+<style> 
+textarea {
+  /*font-family:Consolas,'Lucida Console','DejaVu Sans Mono',monospace;*/
+  font-size: 12pt;
+  max-width: 95%;
+  width: 95%;
+  height: 250px;
+  border: 3px double #CD00CD;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  background: #FFFFFF; /* Old browsers */
+}
+body{
+  background:#2F2F2F ;
+  background-size:80%;
+}
+
+::-webkit-input-placeholder { 
+  text-align: center;
+  line-height: 250px;
+  font-size: 16pt;
+  color: #000000;
+}
+h1{
+
+color:#76EE00;
+}
+.conter{
+text-align:center;
+/* position: fixed; */
+position: absolute;
+top: 0;
+bottom: 0;
+left: 0;
+right: 0;
+margin: auto;
+width: 1000px;
+height:618px;
+}
+.lable1{
+    color:#CD00CD;
+    font-size: 14pt;
+}
+
+</style>
+<body>
+ <div class="conter" >
+        <h1>SM2密钥交换
+        </h1>
+
+        <div class="input">
+
+          
+        </div>
+        <label class="lable1">ID-A:</label>
+        <input id="ida" type="text" name="points" style="width: 40%;margin-left: 15px;margin-right: 25px;" max="25" min="0"/>
+        <label class="lable1">ID-B:</label>
+        <input id="idb" type="text" name="points" style="width: 40%;margin-left: 15px;margin-right: 25px;" max="25" min="0"/>
+        <label class="lable1">私钥A:</label>
+        <input id="siyaoA" type="text" name="points" style="width: 100%;"  max="25" min="0"/>
+        <label class="lable1">公钥A:</label>
+        <input id="gongyaoA" type="text" name="points" style="width: 100%;" max="25" min="0"/>
+        <label class="lable1">私钥B:</label>
+        <input id="siyaoB" type="text" name="points" style="width: 100%;"  max="25" min="0"/>
+        <label class="lable1">公钥B:</label>
+        <input id="gongyaoB" type="text" name="points" style="width: 100%;" max="25" min="0"/>
+
+        &emsp;
+
+     <div class="btn-group" style="margin: 10px;">
+
+            <button  type="button"  class="btn btn-primary" onclick="myEncode('exchange')">SM2密钥交换</button>
+            <button  type="button"  class="btn btn-success" onclick="myEncode('sc')">生成密钥对</button>
+
+     </div>
+
+        <div class="output">
+          <textarea id="output" placeholder="这里是需要的输出">{{output}}</textarea>
+        </div>
+        <label class="lable1">中间过程:</label>
+        <div class="output">
+            
+          <textarea id="midway" placeholder="">{{midway}}</textarea>
+        </div>
+        <a class="btn btn-danger " href="/">返回主页</a>
+
+      </div>
+
+
+</div>
+
+</body>
+<script>
+    function myEncode(type1) {
+        var key=document.getElementById("siyaoA").value ;
+        var Pa = document.getElementById("gongyaoA").value;
+        var key2 = document.getElementById("siyaoB").value ;
+        var Pa2 = document.getElementById("gongyaoB").value;
+        var ida = document.getElementById("ida").value;
+        var idb = document.getElementById("idb").value;
+        if(key=="")
+          key=0;
+        if(Pa == "")
+          Pa = 0;
+        if(key2=="")
+          key2=0;
+        if(Pa2 == "")
+          Pa2 = 0;
+        // var input = document.getElementById("inpsut").value;
+        // var signid = document.getElementById("signid").value;
+        postData = { "type": type1,"key":key,"Pa": Pa,"ida":ida,"idb" : idb, "key2" : key2 ,"Pa2" : Pa2};
+        // console.log(input+type1);
+         $.post("/crypto/sm2exchange/",postData,function (output) {
+           console.log(output)
+        // document.getElementById("output").innerHTML=output.miwen;
+        if(output.type == "sc")
+        {
+
+          document.getElementById("siyaoA").value= output.siyao;
+          document.getElementById("gongyaoA").value= output.gongyao;
+          document.getElementById("siyaoB").value= output.siyao2;
+          document.getElementById("gongyaoB").value= output.gongyao2;
+          // TODO
+          
+        }
+        else if(output.type == "exchange")
+        {
+          console.log('change')
+          ans = "--------------------用户A--------------------\n"
+          ans += "用随机数发生器产生随机数rA ∈[1, n-1] : \n" + output.rA + '\n\n' ;
+          ans += "计算椭圆曲线点RA = [rA]G=(x1,y1) : \n"  + output.RA + '\n\n';
+          ans += "将RA发送给用户B\n"
+          ans += "--------------------用户B--------------------\n"
+          ans += "用随机数发生器产生随机数rB ∈[1, n-1] : \n" + output.rB + '\n\n' ;
+          ans += "计算椭圆曲线点RB = [rB]G=(x1,y1) : \n"  + output.RB + '\n\n';
+          ans += "从R_self中取出域元素x_self，将x_self的数据类型转换为整数，计算x_self_ = 2w +(x_self&(2w−1)) : \n" + output.x_self_1 + '\n\n';
+          ans += "计算t_self = (d_self + ¯ x_self·r_self)modn : \n" + output.t_self1 + '\n\n';
+          ans += "计算x_opposite_ = 2w +(x_opposite&(2w−1)) : \n" + output.x_opposite_1 + '\n\n';
+          ans += "计算椭圆曲线点U_self = [h·t_self](P_opposite +[x_opposite_]R_opposite) = (xU_self,yU_self) :\n" + output.U_self1 + '\n\n' ;
+          ans += "计算KB=KDF(xU_self ∥yU_self ∥ZA ∥ZB,klen) : \n" + output.kB + '\n\n';
+          ans += "计算SB= Hash(0x02∥yU_self ∥Hash(xU_self ∥ZA ∥ZB ∥x_self ∥y_self ∥x_opposite ∥y_opposite)) :\n" +output.SB + '\n\n' ;
+          ans += "将SB,RB发送给用户A\n"
+          ans += "--------------------用户A--------------------\n"
+          ans += "从R_self中取出域元素x_self，将x_self的数据类型转换为整数，计算x_self_ = 2w +(x_self&(2w−1)) : \n" + output.x_self_2 + '\n\n';
+          ans += "计算t_self = (d_self + ¯ x_self·r_self)modn : \n" + output.t_self2 + '\n\n';
+          ans += "计算x_opposite_ = 2w +(x_opposite&(2w−1)) : \n" + output.x_opposite_2 + '\n\n';
+          ans += "计算椭圆曲线点U_self = [h·t_self](P_opposite +[x_opposite_]R_opposite) = (xU_self,yU_self) :\n" + output.U_self2 + '\n\n' ;
+          ans += "计算KA=KDF(xU_self ∥yU_self ∥ZA ∥ZB,klen) : \n" + output.kA + '\n\n';
+          ans += '计算S1= Hash(0x02 ∥ yU ∥Hash(xU ∥ ZA ∥ ZB ∥ x1 ∥ y1 ∥ x2 ∥ y2)) :\n' + output.S1 + '\n\n';
+          ans += "计算SA= Hash(0x03∥yU_self ∥Hash(xU_self ∥ZA ∥ZB ∥x_self ∥y_self ∥x_opposite ∥y_opposite)) :\n" +output.SA + '\n\n' ;
+          ans += "并检验S1=SB是否成立，若等式不成立则从B到A的密钥确认失败\n" + output.S1 + '\n\n'
+          ans += "将SA发送给用户B\n"
+          ans += "--------------------用户B--------------------\n"
+          ans += "计算S2= Hash(0x03 ∥ yV ∥Hash(xV ∥ ZA ∥ ZB ∥ x1 ∥ y1 ∥ x2 ∥ y2)) :\n " + output.S2 + '\n\n'
+          ans += "并检验S2=SA是否成立，若等式不成立则从A到B的密钥确认失败\n"
+          document.getElementById("output").innerHTML= output.b2a + '\n' + output.a2b ;
+          document.getElementById("midway").innerHTML=ans;
+
+        }
+        else if(output.type == "check")
+        {
+
+          console.log("check")
+          document.getElementById("output").innerHTML=output.result;
+          ans = "M′ : \n" + output.M_M + '\n\n';
+          ans += "密码杂凑函数值e′ : \n" + output.e + '\n\n';
+          ans += "计算t=(r′+s′) mod n : \n" + output.t + '\n\n';
+          ans += "计算椭圆曲线点(x1,y1) : \n"+ "(" + output.x_1  + ' , ' + output.y_1 + ')\n\n';
+          ans += "计算R = (e′ + x′1) mod n : \n" + output.R + '\n';
+          document.getElementById("midway").innerHTML=ans;
+
+          
+        }
+          // document.getElementById("output").innerHTML=output.miwen;
+
+        // console.log(output);
+       })
+    }
+</script>
+</html>
